@@ -18,7 +18,7 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
-private val ANSWER_PATTERN = Regex("^-?\\d*$")
+private val answerPattern = Regex("^-?\\d*$")
 
 /**
  * Generates a random math equation based on difficulty level.
@@ -236,7 +236,7 @@ fun MathGameScreen(difficulty: String, navController: NavHostController) {
                     value = userAnswer,
                     onValueChange = { newValue ->
                         // Allow only digits and a leading minus sign
-                        if (newValue.isEmpty() || newValue.matches(ANSWER_PATTERN)) {
+                        if (newValue.isEmpty() || newValue.matches(answerPattern)) {
                             userAnswer = newValue
                         }
                     },

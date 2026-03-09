@@ -74,6 +74,9 @@ fun CustomGamePlayerScreen(
                         // Enable JavaScript for game interactivity
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
+                        // Restrict file and content access for security
+                        settings.allowFileAccess = false
+                        settings.allowContentAccess = false
                         webViewClient = WebViewClient()
                         // Load the constructed HTML directly into the WebView
                         loadDataWithBaseURL(
