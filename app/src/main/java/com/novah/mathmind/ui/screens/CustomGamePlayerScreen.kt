@@ -44,9 +44,7 @@ fun CustomGamePlayerScreen(
         } catch (_: Exception) {}
 
         if (game == null) {
-            // Fall back to local database using numeric ID
-            val numericId = gameId.toIntOrNull()
-            if (numericId != null) {
+            gameId.toIntOrNull()?.let { numericId ->
                 game = database.customGameDao().getGameById(numericId)
             }
         }

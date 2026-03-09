@@ -1,5 +1,6 @@
 package com.novah.mathmind.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -164,6 +165,7 @@ fun AddCustomGameScreen(navController: NavHostController, database: AppDatabase)
                                 saveSuccess = true
                                 saveError = ""
                             } catch (e: Exception) {
+                                Log.e("AddCustomGame", "Firebase save failed", e)
                                 // If Firebase fails, save locally only
                                 try {
                                     database.customGameDao().insertGame(

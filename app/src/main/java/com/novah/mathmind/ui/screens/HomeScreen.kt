@@ -115,10 +115,10 @@ fun HomeScreen(navController: NavHostController, database: AppDatabase) {
                         scope.launch {
                             try {
                                 if (game.firebaseId.isNotEmpty()) {
-                                    val success = firebaseRepo.deleteGame(game.firebaseId)
-                                    if (!success) showDeleteError = true
+                                    if (!firebaseRepo.deleteGame(game.firebaseId)) {
+                                        showDeleteError = true
+                                    }
                                 }
-                                // Also delete from local DB if it exists
                                 database.customGameDao().deleteGame(game)
                             } catch (_: Exception) {
                                 showDeleteError = true

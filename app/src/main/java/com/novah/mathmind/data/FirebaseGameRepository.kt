@@ -3,6 +3,7 @@ package com.novah.mathmind.data
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -63,7 +64,7 @@ class FirebaseGameRepository {
             "cssContent" to game.cssContent,
             "jsContent" to game.jsContent,
             "creatorId" to userId,
-            "createdAt" to com.google.firebase.Timestamp.now()
+            "createdAt" to Timestamp.now()
         )
         val docRef = gamesCollection.add(data).await()
         return docRef.id
