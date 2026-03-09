@@ -19,6 +19,10 @@ interface CustomGameDao {
     @Insert
     suspend fun insertGame(game: CustomGame)
 
+    /** Retrieves a single custom game by its ID. */
+    @Query("SELECT * FROM custom_games WHERE id = :id LIMIT 1")
+    suspend fun getGameById(id: Int): CustomGame?
+
     /** Deletes a custom game from the database. */
     @Delete
     suspend fun deleteGame(game: CustomGame)

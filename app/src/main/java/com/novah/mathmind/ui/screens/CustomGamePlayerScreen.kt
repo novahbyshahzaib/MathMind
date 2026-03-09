@@ -13,7 +13,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
 import com.novah.mathmind.data.AppDatabase
 import com.novah.mathmind.data.CustomGame
-import kotlinx.coroutines.flow.firstOrNull
 
 /**
  * Full-screen WebView player for custom HTML games.
@@ -31,7 +30,7 @@ fun CustomGamePlayerScreen(
     // Load the custom game data from the database
     var game by remember { mutableStateOf<CustomGame?>(null) }
     LaunchedEffect(gameId) {
-        game = database.customGameDao().getAllGames().firstOrNull()?.find { it.id == gameId }
+        game = database.customGameDao().getGameById(gameId)
     }
 
     Scaffold(
