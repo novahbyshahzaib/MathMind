@@ -4,8 +4,9 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Room entity representing a custom HTML game added via Developer Mode.
- * Stores the game title and raw HTML/CSS/JS content for WebView injection.
+ * Room entity representing a custom HTML game.
+ * Stores the game title, raw HTML/CSS/JS content, and creator information.
+ * The creatorId tracks which user created the game for delete permission.
  */
 @Entity(tableName = "custom_games")
 data class CustomGame(
@@ -14,5 +15,7 @@ data class CustomGame(
     val title: String,
     val htmlContent: String,
     val cssContent: String,
-    val jsContent: String
+    val jsContent: String,
+    val creatorId: String = "",
+    val firebaseId: String = ""
 )

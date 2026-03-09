@@ -4,40 +4,33 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import kotlin.random.Random
+import com.novah.mathmind.ui.theme.NeuColors
 
 // ─────────────────────────────────────────────────────────
 //  Sudoku Generator using a backtracking algorithm
 // ─────────────────────────────────────────────────────────
 
-/**
- * Checks if placing [num] at position [row],[col] is valid
- * according to Sudoku rules (unique in row, column, and 3×3 box).
- */
 fun isValid(board: Array<IntArray>, row: Int, col: Int, num: Int): Boolean {
-    // Check row
     for (c in 0 until 9) {
         if (board[row][c] == num) return false
     }
-    // Check column
     for (r in 0 until 9) {
         if (board[r][col] == num) return false
     }
-    // Check 3x3 subgrid
     val startRow = (row / 3) * 3
     val startCol = (col / 3) * 3
     for (r in startRow until startRow + 3) {
@@ -48,11 +41,6 @@ fun isValid(board: Array<IntArray>, row: Int, col: Int, num: Int): Boolean {
     return true
 }
 
-/**
- * Fills the board completely using a backtracking algorithm.
- * Tries numbers 1-9 in a shuffled order for randomization.
- * Returns true if the board was successfully filled.
- */
 fun fillBoard(board: Array<IntArray>): Boolean {
     for (row in 0 until 9) {
         for (col in 0 until 9) {
@@ -62,30 +50,21 @@ fun fillBoard(board: Array<IntArray>): Boolean {
                     if (isValid(board, row, col, num)) {
                         board[row][col] = num
                         if (fillBoard(board)) return true
-                        board[row][col] = 0 // Backtrack
+                        board[row][col] = 0
                     }
                 }
-                return false // No valid number found, trigger backtrack
+                return false
             }
         }
     }
-    return true // Board is fully filled
+    return true
 }
 
-/**
- * Generates a playable Sudoku puzzle by creating a full solution
- * and then removing cells. The number of removed cells determines difficulty.
- * Returns a Pair of (puzzle board, solution board).
- */
 fun generateSudoku(difficulty: String = "medium"): Pair<Array<IntArray>, Array<IntArray>> {
-    // Create and fill a complete valid board
     val solution = Array(9) { IntArray(9) }
     fillBoard(solution)
-
-    // Deep copy the solution to create the puzzle
     val puzzle = Array(9) { row -> solution[row].copyOf() }
 
-    // Determine how many cells to remove based on difficulty
     val cellsToRemove = when (difficulty) {
         "easy" -> 30
         "medium" -> 40
@@ -93,7 +72,6 @@ fun generateSudoku(difficulty: String = "medium"): Pair<Array<IntArray>, Array<I
         else -> 40
     }
 
-    // Remove cells randomly
     var removed = 0
     val positions = (0 until 81).toMutableList().apply { shuffle() }
     for (pos in positions) {
@@ -109,51 +87,35 @@ fun generateSudoku(difficulty: String = "medium"): Pair<Array<IntArray>, Array<I
     return Pair(puzzle, solution)
 }
 
-/**
- * Finds all cells that conflict with the value at [row],[col].
- * Returns a set of (row, col) pairs that have the same value
- * in the same row, column, or 3x3 subgrid.
- */
 fun findConflicts(board: Array<IntArray>, row: Int, col: Int): Set<Pair<Int, Int>> {
     val conflicts = mutableSetOf<Pair<Int, Int>>()
     val num = board[row][col]
     if (num == 0) return conflicts
 
-    // Check row conflicts
     for (c in 0 until 9) {
-        if (c != col && board[row][c] == num) {
-            conflicts.add(Pair(row, c))
-        }
+        if (c != col && board[row][c] == num) conflicts.add(Pair(row, c))
     }
-    // Check column conflicts
     for (r in 0 until 9) {
-        if (r != row && board[r][col] == num) {
-            conflicts.add(Pair(r, col))
-        }
+        if (r != row && board[r][col] == num) conflicts.add(Pair(r, col))
     }
-    // Check 3x3 subgrid conflicts
     val startRow = (row / 3) * 3
     val startCol = (col / 3) * 3
     for (r in startRow until startRow + 3) {
         for (c in startCol until startCol + 3) {
-            if ((r != row || c != col) && board[r][c] == num) {
-                conflicts.add(Pair(r, c))
-            }
+            if ((r != row || c != col) && board[r][c] == num) conflicts.add(Pair(r, c))
         }
     }
     return conflicts
 }
 
 /**
- * Full Sudoku game screen with a 9×9 interactive grid.
- * Features real-time conflict highlighting and auto-solve.
+ * Full Sudoku game screen with neubrutalism design and difficulty support.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SudokuScreen(navController: NavHostController) {
-    // Generate a new puzzle on first composition
+fun SudokuScreen(navController: NavHostController, difficulty: String = "medium") {
     var puzzleState by remember {
-        val (puzzle, solution) = generateSudoku("medium")
+        val (puzzle, solution) = generateSudoku(difficulty)
         mutableStateOf(
             SudokuState(
                 board = puzzle.map { it.toMutableList() }.toMutableList(),
@@ -166,16 +128,13 @@ fun SudokuScreen(navController: NavHostController) {
     var conflictCells by remember { mutableStateOf(setOf<Pair<Int, Int>>()) }
     var isSolved by remember { mutableStateOf(false) }
 
-    /** Updates the board when the user inputs a number */
     fun placeNumber(num: Int) {
         val cell = selectedCell ?: return
         val (row, col) = cell
-        // Only allow editing non-initial cells
         if (puzzleState.initialBoard[row][col] != 0) return
 
         puzzleState.board[row][col] = num
 
-        // Recalculate all conflicts across the board
         val allConflicts = mutableSetOf<Pair<Int, Int>>()
         for (r in 0 until 9) {
             for (c in 0 until 9) {
@@ -189,14 +148,11 @@ fun SudokuScreen(navController: NavHostController) {
             }
         }
         conflictCells = allConflicts
-
-        // Trigger recomposition by creating a new state
         puzzleState = puzzleState.copy(
             board = puzzleState.board.map { it.toMutableList() }.toMutableList()
         )
     }
 
-    /** Clears the selected cell */
     fun clearCell() {
         val cell = selectedCell ?: return
         val (row, col) = cell
@@ -208,7 +164,6 @@ fun SudokuScreen(navController: NavHostController) {
         conflictCells = emptySet()
     }
 
-    /** Auto-solves the puzzle by copying the solution to the board */
     fun autoSolve() {
         for (r in 0 until 9) {
             for (c in 0 until 9) {
@@ -222,7 +177,6 @@ fun SudokuScreen(navController: NavHostController) {
         isSolved = true
     }
 
-    /** Checks if the current board matches the solution */
     fun checkSolution(): Boolean {
         for (r in 0 until 9) {
             for (c in 0 until 9) {
@@ -235,17 +189,23 @@ fun SudokuScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Sudoku") },
+                title = {
+                    Text(
+                        "Sudoku - ${difficulty.replaceFirstChar { it.uppercase() }}",
+                        fontWeight = FontWeight.Black
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                    containerColor = NeuColors.Blue,
+                    titleContentColor = NeuColors.Black,
+                    navigationIconContentColor = NeuColors.Black
+                ),
+                modifier = Modifier.border(width = 3.dp, color = NeuColors.Black)
             )
         }
     ) { paddingValues ->
@@ -257,22 +217,33 @@ fun SudokuScreen(navController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (isSolved) {
-                Text(
-                    text = "🎉 Puzzle Solved!",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.padding(8.dp)
-                )
+                val solvedShape = RoundedCornerShape(8.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .clip(solvedShape)
+                        .background(NeuColors.Green)
+                        .border(3.dp, NeuColors.Black, solvedShape)
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "🎉 Puzzle Solved!",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Black,
+                        color = NeuColors.Black
+                    )
+                }
             }
 
-            // 9x9 Sudoku Grid
+            // 9x9 Sudoku Grid with neubrutalism border
             Box(
                 modifier = Modifier
                     .aspectRatio(1f)
                     .fillMaxWidth()
                     .padding(4.dp)
-                    .border(2.dp, MaterialTheme.colorScheme.onSurface)
+                    .border(3.dp, NeuColors.Black)
             ) {
                 Column {
                     for (row in 0 until 9) {
@@ -283,27 +254,20 @@ fun SudokuScreen(navController: NavHostController) {
                                 val isSelected = selectedCell == Pair(row, col)
                                 val isConflict = conflictCells.contains(Pair(row, col))
 
-                                // Determine cell background color
                                 val bgColor = when {
-                                    isConflict -> Color(0x40FF0000) // Red tint for conflicts
-                                    isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                    isConflict -> NeuColors.Pink.copy(alpha = 0.4f)
+                                    isSelected -> NeuColors.Yellow.copy(alpha = 0.5f)
                                     else -> Color.Transparent
                                 }
-
-                                // Determine border thickness for 3x3 subgrid visual separation
-                                val rightBorder = if ((col + 1) % 3 == 0 && col < 8) 2.dp else 0.5.dp
-                                val bottomBorder = if ((row + 1) % 3 == 0 && row < 8) 2.dp else 0.5.dp
 
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxHeight()
                                         .background(bgColor)
-                                        .border(0.5.dp, Color.Gray)
-                                        .then(
-                                            if ((col + 1) % 3 == 0 && col < 8)
-                                                Modifier.padding(end = 1.dp)
-                                            else Modifier
+                                        .border(
+                                            width = if ((col + 1) % 3 == 0 && col < 8 || (row + 1) % 3 == 0 && row < 8) 2.dp else 0.5.dp,
+                                            color = NeuColors.Black
                                         )
                                         .clickable {
                                             if (!isInitial) {
@@ -316,11 +280,11 @@ fun SudokuScreen(navController: NavHostController) {
                                         Text(
                                             text = value.toString(),
                                             fontSize = 18.sp,
-                                            fontWeight = if (isInitial) FontWeight.Bold else FontWeight.Normal,
+                                            fontWeight = if (isInitial) FontWeight.Black else FontWeight.Bold,
                                             color = when {
-                                                isConflict -> Color.Red
-                                                isInitial -> MaterialTheme.colorScheme.onSurface
-                                                else -> MaterialTheme.colorScheme.primary
+                                                isConflict -> Color(0xFFFF0000)
+                                                isInitial -> NeuColors.Black
+                                                else -> NeuColors.Blue
                                             },
                                             textAlign = TextAlign.Center
                                         )
@@ -334,49 +298,50 @@ fun SudokuScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Number input buttons (1-9)
+            // Number input buttons with neubrutalism style
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 for (num in 1..9) {
-                    FilledTonalButton(
-                        onClick = { placeNumber(num) },
-                        modifier = Modifier.size(40.dp),
-                        contentPadding = PaddingValues(0.dp)
+                    val btnShape = RoundedCornerShape(8.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(btnShape)
+                            .background(NeuColors.Yellow)
+                            .border(2.dp, NeuColors.Black, btnShape)
+                            .clickable { placeNumber(num) },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(text = num.toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = num.toString(),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Black,
+                            color = NeuColors.Black
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Action buttons row
+            // Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                OutlinedButton(onClick = { clearCell() }) {
-                    Text("Clear")
+                NeuSmallButton("Clear", NeuColors.Orange) { clearCell() }
+                NeuSmallButton("Check", NeuColors.Green) {
+                    if (checkSolution()) isSolved = true
                 }
-                Button(onClick = {
-                    if (checkSolution()) {
-                        isSolved = true
-                    }
-                }) {
-                    Text("Check")
-                }
-                Button(onClick = { autoSolve() }) {
-                    Text("Auto-Solve")
-                }
+                NeuSmallButton("Solve", NeuColors.Pink) { autoSolve() }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // New Game button
-            OutlinedButton(onClick = {
-                val (puzzle, solution) = generateSudoku("medium")
+            NeuSmallButton("New Game", NeuColors.Blue) {
+                val (puzzle, solution) = generateSudoku(difficulty)
                 puzzleState = SudokuState(
                     board = puzzle.map { it.toMutableList() }.toMutableList(),
                     solution = solution,
@@ -385,19 +350,38 @@ fun SudokuScreen(navController: NavHostController) {
                 selectedCell = null
                 conflictCells = emptySet()
                 isSolved = false
-            }) {
-                Text("New Game")
             }
         }
     }
 }
 
-/**
- * Holds the state of a Sudoku game.
- * @param board The current mutable board the player is editing
- * @param solution The complete valid solution for checking/auto-solve
- * @param initialBoard The original puzzle with pre-filled (immutable) cells
- */
+@Composable
+private fun NeuSmallButton(text: String, color: Color, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(8.dp)
+    Box {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .offset(x = 2.dp, y = 2.dp)
+                .clip(shape)
+                .background(NeuColors.Black)
+        )
+        Button(
+            onClick = onClick,
+            shape = shape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = color,
+                contentColor = NeuColors.Black
+            ),
+            modifier = Modifier
+                .border(2.dp, NeuColors.Black, shape),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Text(text = text, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        }
+    }
+}
+
 data class SudokuState(
     val board: MutableList<MutableList<Int>>,
     val solution: Array<IntArray>,

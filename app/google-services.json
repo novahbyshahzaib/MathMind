@@ -1,0 +1,28 @@
+{
+  "project_info": {
+    "project_number": "609580159558",
+    "project_id": "novah-pub",
+    "storage_bucket": "novah-pub.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:609580159558:web:1823d4dd939e470e0df047",
+        "android_client_info": {
+          "package_name": "com.novah.mathmind"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjPEh5Dq_OYiQduLXakDod_huPyQQMk0E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
